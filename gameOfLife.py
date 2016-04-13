@@ -20,8 +20,8 @@ def main():
     '''
     
     # the size of the board
-    size_x = 20#45
-    size_y = 20# 80
+    size_x = 30#45
+    size_y = 30# 80
     
     # create the board
     gol = GOL(size_x,size_y)
@@ -113,9 +113,10 @@ class GOL():
                 for i in range(-1,2):
                     for j in range(-1,2):
                         x_indx = np.mod(x+i,self.size_x)
-                        y_indx = np.mod(y+i,self.size_y)
+                        y_indx = np.mod(y+j,self.size_y)
                         neighbors += self.board[x_indx,y_indx].previous_state
-                        
+                        #if (x == 1 and y == 1):
+                            #print('coords {},{} has value {}'.format(x_indx,y_indx,gol.board[x_indx,y_indx].previous_state))
                 neighbors -= self.board[x,y].previous_state # subtract the state itself
                 
                 # Rules of Life
@@ -127,7 +128,12 @@ class GOL():
                     self.board[x,y].change_state(0)
                 elif ((self.board[x,y].state == 0) and (neighbors == 3)):
                     # Reproduction
-                    self.board[x,y].change_state(1)  
+                    self.board[x,y].change_state(1) 
+                
+                if (x == 1 and y == 1):
+                    print('neighbors = {}'.format(neighbors))
+                    print('previous state = {}'.format(self.board[x,y].previous_state))
+                    print('current state = {}'.format(self.board[x,y].state))
         
 
     def plot_data(self):
