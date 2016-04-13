@@ -4,7 +4,8 @@ Python 3
 Object-oriented program
 Cellular Automata
 
-Tom Logan
+Tom M Logan
+www.tomlogan.co.nz
 
 The game of life code is as described in
 http://natureofcode.com/book/chapter-7-cellular-automata/
