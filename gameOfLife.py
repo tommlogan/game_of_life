@@ -13,6 +13,7 @@ by Daniel Shiffman
 import numpy as np
 import matplotlib as mpl
 from matplotlib import pyplot
+from time import sleep
 
 def main():
     '''
@@ -20,8 +21,8 @@ def main():
     '''
     
     # the size of the board
-    size_x = 30#45
-    size_y = 30# 80
+    size_x = 45
+    size_y = 80
     
     # create the board
     gol = GOL(size_x,size_y)
@@ -115,8 +116,7 @@ class GOL():
                         x_indx = np.mod(x+i,self.size_x)
                         y_indx = np.mod(y+j,self.size_y)
                         neighbors += self.board[x_indx,y_indx].previous_state
-                        #if (x == 1 and y == 1):
-                            #print('coords {},{} has value {}'.format(x_indx,y_indx,gol.board[x_indx,y_indx].previous_state))
+                        
                 neighbors -= self.board[x,y].previous_state # subtract the state itself
                 
                 # Rules of Life
@@ -130,10 +130,6 @@ class GOL():
                     # Reproduction
                     self.board[x,y].change_state(1) 
                 
-                if (x == 1 and y == 1):
-                    print('neighbors = {}'.format(neighbors))
-                    print('previous state = {}'.format(self.board[x,y].previous_state))
-                    print('current state = {}'.format(self.board[x,y].state))
         
 
     def plot_data(self):
@@ -143,38 +139,40 @@ class GOL():
                     self.gol_state[i,j] = self.board[i,j].transition()
     
     def first_display(self):
+        '''
+        initialise plotting framework
+        '''
         self.plot_data()
         pyplot.ion()
         self.fig, ax =pyplot.subplots(1,1)
-        pyplot.cla()        
-        # make a color map of fixed colors
+        pyplot.cla()
+        
+        # color map of fixed colors
         cmap = mpl.colors.ListedColormap(['white','black','blue','red'])
         bounds=[0,1,2,3,4]
         norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
+        self.img = pyplot.imshow(self.gol_state,interpolation='nearest',cmap = cmap,norm=norm)
         
-        # tell imshow about color map so that only set colors are used
-        self.img = pyplot.pcolor(self.gol_state, cmap = cmap,norm=norm)
+        # grid
         ax.grid(True, which='minor', axis='both', linestyle='-', color='k')
         ax.set_xticks(range(0,self.size_y), minor=True)
         ax.set_yticks(range(0,self.size_x), minor=True)        
-        #self.img.grid(b=True, which='major', color='k', linestyle='-')
-        #self.img.grid(b=True, which='minor', color='k', linestyle='-')
-        # make a color bar
+
+        # color bar
         cbar = pyplot.colorbar(self.img,cmap=cmap,
                         norm=norm,boundaries=bounds,ticks=[0,1,2,3])
         cbar.ax.set_yticklabels(['dead', 'alive','born','dying'])        
         
-        pyplot.show() 
+        # title
+        ax.set_title('The Game of Life')
         
+        pyplot.show() 
     
-    def display(self):
-        self.plot_data()
-        cmap = mpl.colors.ListedColormap(['white','black','blue','red'])
-        bounds=[0,1,2,3,4]
-        norm = mpl.colors.BoundaryNorm(bounds, cmap.N)        
-        self.img = pyplot.pcolor(self.gol_state, cmap = cmap,norm=norm)
-        pyplot.show()
-        pyplot.pause(0.01)
+    def update_plot(self):
+        self.plot_data()       
+        self.img.set_data(self.gol_state) 
+        self.fig.canvas.draw()        
+        sleep(0.001)
     
 if __name__ == '__main__':
     main() # initialise the board
