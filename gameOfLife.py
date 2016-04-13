@@ -1,7 +1,7 @@
 '''
 The Game of Life
 Python 3
-Object-oriented
+Object-oriented program
 Cellular Automata
 
 Tom Logan
@@ -14,12 +14,25 @@ import numpy as np
 import matplotlib as mpl
 from matplotlib import pyplot
 
-###
-# User inputs
-###
-size_x = 30
-size_y = 40
-
+def main():
+    '''
+    Runs a home range simulation.
+    '''
+    
+    # the size of the board
+    size_x = 20#45
+    size_y = 20# 80
+    
+    # create the board
+    gol = GOL(size_x,size_y)
+    
+    # simulate the game of life
+    gol.first_display()
+    i = 0
+    while (i < 1000):
+        i += 1
+        gol.generate()
+        gol.display()
 
 
 class cell:
@@ -29,21 +42,20 @@ class cell:
         # the location
         x = int() 
         y = int()
-        # the size
-        w = int()
+        
         # the states
         self.state = np.random.randint(0,2)
         self.previous_state = self.state        
        
     def save_previous(self):
-        self.previous = self.state
+        self.previous_state = self.state
         
     def change_state(self, new_state):
         # the states
         self.state = new_state
     
     
-    def display(self):
+    def transition(self):
         if ((self.previous_state == 0) and (self.state == 1)):
             # a cell is born
             value = 2
@@ -57,85 +69,109 @@ class cell:
             # no change - cell is dead
             value = 0
            
-    return(value)
+        return(value)
             
 
 class GOL():
     '''
-    The 2D grid 
-    '''
-    
-    w = 8
-    columns = 0
-    rows = 0
-    
-    board = np.empty(shape=(size_x, size_y), dtype=object)
-    
+    The game of life
+    '''    
 
     def __init__(self, size_x, size_y):
         '''
-        Sets a size, but you still need to populate qualities before use
+        Creates a 2D grid of cells. Randomly seeds dead/alive.
         '''
-        for x in range(0,size_x):
-            for y in range(0,size_y):
-                board[i,j] = cell(i,j)
+        self.size_x = size_x
+        self.size_y = size_y       
+        
+        # create an empty array for objects
+        self.board = np.empty(shape=(size_x, size_y), dtype=object)        
+        
+        for i in range(0,size_x):
+            for j in range(0,size_y):
+                self.board[i,j] = cell(i,j)
     
-    def generate():
+    
+    def generate(self):
         '''
         save the old generation
         '''
-        for x in range(0,size_x):
-            for y in range(0,size_y):        
-                board[i,j].save_previous()
-    
-    
-    # loop through the cells in the board
-    for x in range(0,size_x):
-        for y in range(0,size_y):
-            
-            # count neighbors
-            neighbors = 0
-            for i in range(-1,2):
-                for j in range(-1,2):
-                    neighbors += board[x+i,y+i].previous_state
-                    
-            neighbors -= board[x,y].previous_state # subtract the state itself
-            
-            # Rules of Life
-            if ((board[x,y].state == 1) and (neighbors <= 1)):
-                # Loneliness
-                board[x,y].change_state(0)
-            elif ((board[x,y].state == 1) and (neighbors >= 4)):
-                # Overpopulation
-                board[x,y].change_state(0)
-            elif ((board[x,y].state == 0) and (neighbors == 3)):
-                # Reproduction
-                board[x,y].change_state(1)     
-
-    def display():
-        zvals = np.zeros(size_x,size_y)
-        for x in range(0,size_x):
-                for y in range(0,size_y):      
-                    zvals[i,j] = board[i,j].display()
+        for i in range(0,self.size_x):
+            for j in range(0,self.size_y):        
+                self.board[i,j].save_previous()
         
+        '''
+        create the new generation
+        '''
+        
+        
+        for x in range(0,self.size_x):
+            for y in range(0,self.size_y):
+                
+                # count neighbors
+                neighbors = 0
+                for i in range(-1,2):
+                    for j in range(-1,2):
+                        x_indx = np.mod(x+i,self.size_x)
+                        y_indx = np.mod(y+i,self.size_y)
+                        neighbors += self.board[x_indx,y_indx].previous_state
+                        
+                neighbors -= self.board[x,y].previous_state # subtract the state itself
+                
+                # Rules of Life
+                if ((self.board[x,y].state == 1) and (neighbors <= 1)):
+                    # Loneliness
+                    self.board[x,y].change_state(0)
+                elif ((self.board[x,y].state == 1) and (neighbors >= 4)):
+                    # Overpopulation
+                    self.board[x,y].change_state(0)
+                elif ((self.board[x,y].state == 0) and (neighbors == 3)):
+                    # Reproduction
+                    self.board[x,y].change_state(1)  
+        
+
+    def plot_data(self):
+        self.gol_state = np.zeros(shape=(self.size_x,self.size_y))
+        for i in range(0,self.size_x):
+                for j in range(0,self.size_y):      
+                    self.gol_state[i,j] = self.board[i,j].transition()
+    
+    def first_display(self):
+        self.plot_data()
+        pyplot.ion()
+        self.fig, ax =pyplot.subplots(1,1)
+        pyplot.cla()        
         # make a color map of fixed colors
         cmap = mpl.colors.ListedColormap(['white','black','blue','red'])
         bounds=[0,1,2,3,4]
         norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
         
         # tell imshow about color map so that only set colors are used
-        img = pyplot.imshow(zvals,interpolation='nearest',
-                            cmap = cmap,norm=norm)
-        
+        self.img = pyplot.pcolor(self.gol_state, cmap = cmap,norm=norm)
+        ax.grid(True, which='minor', axis='both', linestyle='-', color='k')
+        ax.set_xticks(range(0,self.size_y), minor=True)
+        ax.set_yticks(range(0,self.size_x), minor=True)        
+        #self.img.grid(b=True, which='major', color='k', linestyle='-')
+        #self.img.grid(b=True, which='minor', color='k', linestyle='-')
         # make a color bar
-        cbar = pyplot.colorbar(img,cmap=cmap,
+        cbar = pyplot.colorbar(self.img,cmap=cmap,
                         norm=norm,boundaries=bounds,ticks=[0,1,2,3])
-        cbar.ax.set_yticklabels(['dead', 'alive','born','dying'])
+        cbar.ax.set_yticklabels(['dead', 'alive','born','dying'])        
         
-        pyplot.show()    
+        pyplot.show() 
+        
+    
+    def display(self):
+        self.plot_data()
+        cmap = mpl.colors.ListedColormap(['white','black','blue','red'])
+        bounds=[0,1,2,3,4]
+        norm = mpl.colors.BoundaryNorm(bounds, cmap.N)        
+        self.img = pyplot.pcolor(self.gol_state, cmap = cmap,norm=norm)
+        pyplot.show()
+        pyplot.pause(0.01)
+    
+if __name__ == '__main__':
+    main() # initialise the board
 
-
-# initialise the board
-board = grid(size_x, size_y)
  
 
