@@ -1,16 +1,16 @@
 # The Game of Life
 
-*Python 3*
-*Object-oriented program*
-*Cellular Automata*
+*Python 3*  
+*Object-oriented program*  
+*Cellular Automata*  
 
 ####AUTHOR:
-Tom M Logan
+Tom M Logan  
 www.tomlogan.co.nz
 
 ####BASED ON:
 The game of life code is as described in
-http://natureofcode.com/book/chapter-7-cellular-automata/
+http://natureofcode.com/book/chapter-7-cellular-automata/  
 by Daniel Shiffman
 
 ##THE GAME OF LIFE:
