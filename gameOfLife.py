@@ -34,7 +34,7 @@ def main():
     while (i < 1000):
         i += 1
         gol.generate()
-        gol.display()
+        gol.update_plot()
 
 
 class cell:
