@@ -7,6 +7,9 @@ Cellular Automata
 Tom M Logan
 www.tomlogan.co.nz
 
+Amaraj Judge
+www.amarajjudge.com/
+
 The game of life code is as described in
 http://natureofcode.com/book/chapter-7-cellular-automata/
 by Daniel Shiffman
@@ -15,8 +18,11 @@ import numpy as np
 import matplotlib as mpl
 from matplotlib import pyplot
 from time import sleep
+from scipy import signal
+import cProfile
+import pstats
 
-def main():
+def main(showPlot=True):
     '''
     Runs a home range simulation.
     '''
@@ -28,53 +34,23 @@ def main():
     # create the board
     gol = GOL(size_x,size_y)
     
+    # create kernel for convolution
+    kernel = np.ones((3,3), dtype=np.int)
+    kernel[1,1] = 0
+
     # simulate the game of life
-    gol.first_display()
+    if showPlot:
+        gol.first_display()
+    # update each time    
     i = 0
-    while (i < 1000):
+    while (i < 100):
         i += 1
-        gol.generate()
-        gol.update_plot()
+        gol.generate(kernel)
+        if showPlot:
+            gol.update_plot()
 
 
-class cell:
-    ' the building block of the CA'
-    
-    def __init__(self, x, y):
-        # the location
-        x = int() 
-        y = int()
-        
-        # the states
-        self.state = np.random.randint(0,2)
-        self.previous_state = self.state        
-       
-    def save_previous(self):
-        self.previous_state = self.state
-        
-    def change_state(self, new_state):
-        # the states
-        self.state = new_state
-    
-    
-    def transition(self):
-        if ((self.previous_state == 0) and (self.state == 1)):
-            # a cell is born
-            value = 2
-        elif (self.state == 1):
-            # no change - cell is alive
-            value = 1
-        elif (self.previous_state == 1 and self.state == 0):
-            # a cell dies
-            value = 3
-        else:
-            # no change - cell is dead
-            value = 0
-           
-        return(value)
-            
-
-class GOL():
+class GOL:
     '''
     The game of life
     '''    
@@ -86,59 +62,68 @@ class GOL():
         self.size_x = size_x
         self.size_y = size_y       
         
-        # create an empty array for objects
-        self.board = np.empty(shape=(size_x, size_y), dtype=object)        
-        
-        for i in range(0,size_x):
-            for j in range(0,size_y):
-                self.board[i,j] = cell(i,j)
+        # initialise a random board of dead and alive cells
+        self.board = np.random.randint(0,2,size = (size_x, size_y), dtype=np.int)        
+
+        # initialise the board for saving the previous state
+        self.previous_board = np.copy(self.board)
     
-    
-    def generate(self):
+
+    def save_previous_board(self):
         '''
         save the old generation
         '''
-        for i in range(0,self.size_x):
-            for j in range(0,self.size_y):        
-                self.board[i,j].save_previous()
+        self.previous_board = np.copy(self.board)
+
+
+    def generate(self, kernel):
+        '''
+        save the old generation
+        '''
+        self.save_previous_board()
         
         '''
         create the new generation
         '''
         
+        # count neighbors of each cell
+        neighbors_count = signal.convolve2d(self.previous_board, kernel, mode='same')        
         
         for x in range(0,self.size_x):
             for y in range(0,self.size_y):
-                
-                # count neighbors
-                neighbors = 0
-                for i in range(-1,2):
-                    for j in range(-1,2):
-                        x_indx = np.mod(x+i,self.size_x)
-                        y_indx = np.mod(y+j,self.size_y)
-                        neighbors += self.board[x_indx,y_indx].previous_state
-                        
-                neighbors -= self.board[x,y].previous_state # subtract the state itself
-                
                 # Rules of Life
-                if ((self.board[x,y].state == 1) and (neighbors <= 1)):
+                if ((self.board[x,y] == 1) and (neighbors_count[x,y] <= 1)):
                     # Loneliness
-                    self.board[x,y].change_state(0)
-                elif ((self.board[x,y].state == 1) and (neighbors >= 4)):
+                    self.board[x,y] = 0
+                elif ((self.board[x,y] == 1) and (neighbors_count[x,y] >= 4)):
                     # Overpopulation
-                    self.board[x,y].change_state(0)
-                elif ((self.board[x,y].state == 0) and (neighbors == 3)):
+                    self.board[x,y] = 0
+                elif ((self.board[x,y] == 0) and (neighbors_count[x,y] == 3)):
                     # Reproduction
-                    self.board[x,y].change_state(1) 
+                    self.board[x,y] = 1
                 
-        
 
     def plot_data(self):
+        '''
+        assigns plotting colors based on change in state
+        '''
         self.gol_state = np.zeros(shape=(self.size_x,self.size_y))
         for i in range(0,self.size_x):
                 for j in range(0,self.size_y):      
-                    self.gol_state[i,j] = self.board[i,j].transition()
+                    if ((self.previous_board[i,j] == 0) and (self.board[i,j] == 1)):
+                        # a cell is born
+                        self.gol_state[i,j] = 2
+                    elif (self.board[i,j] == 1):
+                        # no change - cell is alive
+                        self.gol_state[i,j] = 1
+                    elif (self.previous_board[i,j] == 1 and self.board[i,j] == 0):
+                        # a cell dies
+                        self.gol_state[i,j] = 3
+                    else:
+                        # no change - cell is dead
+                        self.gol_state[i,j] = 0
     
+
     def first_display(self):
         '''
         initialise plotting framework
@@ -154,11 +139,11 @@ class GOL():
         norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
         self.img = pyplot.imshow(self.gol_state,interpolation='nearest',cmap = cmap,norm=norm)
         
-        # grid
+        # grid  
         ax.grid(True, which='minor', axis='both', linestyle='-', color='k')
         ax.set_xticks(range(0,self.size_y), minor=True)
-        ax.set_yticks(range(0,self.size_x), minor=True)        
-
+        ax.set_yticks(range(0,self.size_x), minor=True)       
+        
         # color bar
         cbar = pyplot.colorbar(self.img,cmap=cmap,
                         norm=norm,boundaries=bounds,ticks=[0,1,2,3])
@@ -169,14 +154,20 @@ class GOL():
         
         pyplot.show() 
     
+
     def update_plot(self):
         self.plot_data()       
         self.img.set_data(self.gol_state) 
         self.fig.canvas.draw()        
         sleep(0.001)
     
+
+def profile():
+    cProfile.run('main(showPlot=False)', 'stats')
+    p = pstats.Stats('stats')
+    p.sort_stats('time').print_stats(20)    
+
+    
 if __name__ == '__main__':
-    main() # initialise the board
-
- 
-
+    profile() # initialise the board
+    # main(showPlot=True)
