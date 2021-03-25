@@ -16,11 +16,12 @@ by Daniel Shiffman
 '''
 import numpy as np
 import matplotlib as mpl
-from matplotlib import pyplot
+import matplotlib.pyplot as plt
 from time import sleep
 from scipy import signal
-import cProfile
-import pstats
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+# import cProfile
+# import pstats
 
 def main(showPlot=True):
     '''
@@ -35,7 +36,7 @@ def main(showPlot=True):
     gol = GOL(size_x,size_y)
     
     # create kernel for convolution
-    kernel = np.ones((3,3), dtype=np.int)
+    kernel = np.ones((3, 3), dtype='uint8')
     kernel[1,1] = 0
 
     # simulate the game of life
@@ -43,7 +44,7 @@ def main(showPlot=True):
         gol.first_display()
     # update each time    
     i = 0
-    while (i < 100):
+    while (i < 200):
         i += 1
         gol.generate(kernel)
         if showPlot:
@@ -63,7 +64,7 @@ class GOL:
         self.size_y = size_y       
         
         # initialise a random board of dead and alive cells
-        self.board = np.random.randint(0,2,size = (size_x, size_y), dtype=np.int)        
+        self.board = np.random.randint(0,2,size = (size_x, size_y), dtype='uint8')        
 
         # initialise the board for saving the previous state
         self.previous_board = np.copy(self.board)
@@ -107,7 +108,7 @@ class GOL:
         '''
         assigns plotting colors based on change in state
         '''
-        self.gol_state = np.zeros(shape=(self.size_x,self.size_y))
+        self.gol_state = np.zeros(shape=(self.size_x,self.size_y), dtype='uint8')
         for i in range(0,self.size_x):
                 for j in range(0,self.size_y):      
                     if ((self.previous_board[i,j] == 0) and (self.board[i,j] == 1)):
@@ -129,45 +130,50 @@ class GOL:
         initialise plotting framework
         '''
         self.plot_data()
-        pyplot.ion()
-        self.fig, ax =pyplot.subplots(1,1)
-        pyplot.cla()
+        plt.ion()
+        self.fig, ax =plt.subplots(1,1)
+        plt.cla()
         
         # color map of fixed colors
         cmap = mpl.colors.ListedColormap(['white','black','blue','red'])
         bounds=[0,1,2,3,4]
         norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
-        self.img = pyplot.imshow(self.gol_state,interpolation='nearest',cmap = cmap,norm=norm)
-        
+        self.img = plt.imshow(self.gol_state,interpolation='nearest',cmap = cmap,norm=norm)
+                
         # grid  
-        ax.grid(True, which='minor', axis='both', linestyle='-', color='k')
-        ax.set_xticks(range(0,self.size_y), minor=True)
-        ax.set_yticks(range(0,self.size_x), minor=True)       
+        # ax.grid(False, which='minor', axis='both', linestyle='-', color='k')
+        # ax.set_xticks(range(0,self.size_y), minor=True)
+        # ax.set_yticks(range(0,self.size_x), minor=True)       
+        plt.axis('off')
         
         # color bar
-        cbar = pyplot.colorbar(self.img,cmap=cmap,
-                        norm=norm,boundaries=bounds,ticks=[0,1,2,3])
+        # divider = make_axes_locatable(ax)
+        # cax = divider.append_axes("right", size="1%")
+        cbar = plt.colorbar(self.img,cmap=cmap, norm=norm,boundaries=bounds,ticks=[0,1,2,3])
         cbar.ax.set_yticklabels(['dead', 'alive','born','dying'])        
         
         # title
         ax.set_title('The Game of Life')
         
-        pyplot.show() 
+        plt.show() 
     
 
     def update_plot(self):
         self.plot_data()       
+        # import code
+        # code.interact(local=locals())
         self.img.set_data(self.gol_state) 
-        self.fig.canvas.draw()        
-        sleep(0.001)
+        self.fig.canvas.draw()
+        plt.pause(0.0001)
+        # sleep(0.1)
     
 
-def profile():
-    cProfile.run('main(showPlot=False)', 'stats')
-    p = pstats.Stats('stats')
-    p.sort_stats('time').print_stats(20)    
+# def profile():
+#     cProfile.run('main(showPlot=False)', 'stats')
+#     p = pstats.Stats('stats')
+#     p.sort_stats('time').print_stats(20)    
 
     
 if __name__ == '__main__':
-    profile() # initialise the board
-    # main(showPlot=True)
+    # profile() # initialise the board
+    main(showPlot=True)
